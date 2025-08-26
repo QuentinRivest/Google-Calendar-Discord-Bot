@@ -10,9 +10,9 @@ A Discord bot that posts updates on a given Google calendar so members of the se
   * These will be created automatically a set amount of days (up to user) before events in the bot's calendar.
   * Upon the channel's creation, it'll create a post with the title, date and time, and description of the event (all from the calendar event itself).
     * It will also have reaction messages for tracking attendance to the event.
-      * **NOTE:** The attendance tracked in this post <ins>**will directly edit the calendar event attendence**</ins>, however this is the only time the bot will be editing anything on the calendar itself in order to prevent too much tampering with the calendar.
 * post reminders for upcoming events in its calendar that have existing channels.
   * These will be posted in the same channel as the weekly updates.
+  * The reminders will @ those who have affirmed that they'll be attending the event.
 * send DM reminders **OR** a message in the event channel to those who haven't marked their attendance for an event when there are x amount of days until that event.
   * i.e., if the event is in (for example) 3 days, and someone hasn't yet marked whether or not they'll be attending, the bot can DM that individual with the event info and allows them to mark their attendance in that DM (rather than them having to go to the original message).
   * Individuals that receive this DM can opt to be put on a 'do not contact' list if, for example, they're not active in the server and don't want to be DMed for events.
