@@ -19,7 +19,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-global_bot_settings = inc.bot_settings.BotSettings()
+G_BOT_SETTINGS = inc.bot_settings.BotSettings()
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
@@ -30,27 +30,38 @@ async def on_ready():
 
 @bot.event
 async def on_guild_available(guild: discord.Guild):
-  global_bot_settings.server_guild = guild
-  global_bot_settings.target_role = guild.default_role
+  G_BOT_SETTINGS.server_guild = guild
+  G_BOT_SETTINGS.target_role = guild.default_role
 
 # Responds to user with certain role that use '!hi' command.
 @bot.command()
-@commands.has_role(global_bot_settings.edit_perm_role_name)
+@commands.has_role(G_BOT_SETTINGS.edit_perm_role_name)
 async def hi(context: commands.Context):
   await context.send(f"Hello {context.author.mention}!")
 
+# Posts weekly calendar.
 @bot.command()
 async def week(context: commands.Context):
   ex_img_filename = "chameleon.jpg"
   ex_img_file = discord.File("assets/chameleon.jpg", filename=ex_img_filename)
   ex_weekly = inc.weekly_schedule_post.WeeklySchedulePost(ex_img_file)
-  await context.send(file=ex_img_file, embed=ex_weekly.weekly_embed, view=ex_weekly.calendar_btn)
+
+  await context.send(file=ex_img_file,
+                     embed=ex_weekly.weekly_embed,
+                     view=ex_weekly.calendar_btn)
 
 # Posts event post.
 @bot.command()
 async def post(context: commands.Context):
-  ex_event = inc.event_post.EventPost(global_bot_settings)
-  await context.send(embed=ex_event.event_embed, view=ex_event.attendance_tracker)
+  event_msg: discord.Message
+  ex_event = inc.event_post.EventPost(G_BOT_SETTINGS)
+
+  # Placeholder for setting up designated Events Category
+  G_BOT_SETTINGS.events_category = G_BOT_SETTINGS.server_guild.categories[1]
+  new_event_channel: discord.TextChannel = await G_BOT_SETTINGS.events_category.create_text_channel(name=ex_event.title)
+  event_msg = await new_event_channel.send(embed=ex_event.event_embed, view=ex_event.attend_trkr_view)
+  ex_event.setEventMsg(event_msg)
+  await event_msg.pin()
 
 
 bot.run(discord_token, log_handler=handler, log_level=logging.DEBUG)

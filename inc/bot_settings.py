@@ -8,3 +8,5 @@ class BotSettings:
     self.edit_perm_role_name = "@everyone"
     # The role that notifications will be targeted toward.
     self.target_role: discord.Role
+    # The server Category that new event channels will be created in.
+    self.events_category: discord.CategoryChannel
