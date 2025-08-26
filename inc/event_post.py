@@ -12,7 +12,8 @@ class EventPost():
     description = "This is an example of a description for a placeholder event."
     # calendar_url = "https://calendar.google.com/calendar/u/0/r/week/2025/9/5?pli=1"
 
-    self.event_info = discord.Embed(description=(title + "\n\n" + description), color=0x11AAAA)
+    # Event info.
+    self.event_embed = discord.Embed(title=title, description=description, color=0x11AAAA)
 
     # Attendee stats.
     self.confirmed_attendees: list[discord.Member] = []
