@@ -31,6 +31,6 @@ class EventPost():
       non_respondents=self.non_respondents
     )
 
-  def setEventMsg(self, msg: discord.Message):
+  def setEventMsg(self, msg: discord.Message) -> None:
     self.event_msg = msg
     self.attend_trkr_view.setEventMsg(msg)

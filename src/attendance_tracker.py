@@ -37,7 +37,7 @@ class AttendanceTracker(discord.ui.View):
       return event_embed_copy
 
     # Button behaviors.
-    async def yesCallback(interaction: discord.Interaction):
+    async def yesCallback(interaction: discord.Interaction) -> None:
       user = interaction.user
       confirmed.append(user)
       try:
@@ -49,7 +49,7 @@ class AttendanceTracker(discord.ui.View):
           pass
       await interaction.response.edit_message(embed=getUpdatedEmbed())
 
-    async def noCallback(interaction):
+    async def noCallback(interaction: discord.Interaction) -> None:
       user = interaction.user
       declined.append(user)
       try:
@@ -69,5 +69,5 @@ class AttendanceTracker(discord.ui.View):
     no_btn.callback = noCallback
     self.add_item(no_btn)
 
-  def setEventMsg(self, msg: discord.Message):
+  def setEventMsg(self, msg: discord.Message) -> None:
     self.event_msg = msg
