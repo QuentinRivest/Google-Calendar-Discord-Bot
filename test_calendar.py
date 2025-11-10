@@ -3,22 +3,27 @@ from src.linked_calendar import LinkedCalendar
 from src.calendar_image  import CalendarImage
 
 def testCalendar() -> None:
+  curr_month = 11
+
+  cal = LinkedCalendar()
+  cal.setCalendarIDByIndex(calendar_index=3)
+
+  cal_image = CalendarImage()
+  cal_image.initEmptyCalendarImage(month=curr_month)
+
   while True:
-    try:
-      curr_month = int(input("Enter valid month integer: "))
-    except ValueError:
-      continue
+    user_input = input("ENTER TO UPDATE")
+    if user_input == "exit":
+      break
 
-    if curr_month < 1 or 12 < curr_month: continue
+    removed_events, new_events = cal.getEventsForGivenMonth(month=curr_month)
+    if (removed_events or new_events):
+      print("Updating...")
+    else:
+      print(f"No new events for {curr_month}. :(")
 
-    cal = LinkedCalendar()
-    cal.setCalendarIDByIndex(calendar_index=3)
-    cal.updateEventsForGivenMonth(month=curr_month)
-    # print(f"All Events:\n{cal.getEventsStr(non_recurring=True)}")
-
-    cal_image = CalendarImage()
-    cal_image.createCalendarImage(month=curr_month, events_list=cal.getEventsList())
-    cal_image.showCalendarImage()
-    # cal_image.saveCalendarImagePng()
+    cal_image.updateCalendarImage(removed_events=removed_events,
+                                  new_events=new_events)
+    cal_image.saveCalendarImagePng()
 
 testCalendar()

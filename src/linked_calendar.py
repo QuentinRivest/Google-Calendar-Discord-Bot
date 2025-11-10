@@ -24,13 +24,36 @@ from googleapiclient.discovery      import build, Resource
 from googleapiclient.errors         import HttpError
 
 
+class Event:
+
+  def __init__(
+    self,
+    *,
+    id: str,
+    last_etag: str,
+    url: str,
+    title: str,
+    description: str,
+    start_dt_iso: str,
+    end_dt_iso: str,
+    is_recurring: bool
+  ) -> None:
+    self.id           = id
+    self.last_etag    = last_etag
+    self.url          = url
+    self.title        = title
+    self.description  = description
+    self.start_dt     = datetime.fromisoformat(start_dt_iso) if not start_dt_iso is None else None
+    self.end_dt       = datetime.fromisoformat(end_dt_iso)   if not end_dt_iso   is None else None
+    self.is_recurring = is_recurring if not is_recurring is None else False
+
+
 class LinkedCalendar:
   def __init__(self) -> None:
     # The ID of the specific calendar chosen out of the list of calendars the
     # user has.
     self.__calendar_id:         str              = "primary"
     self.__events:              dict[str, Event] = {}  # (id : event_obj)
-    self.__recurring_event_IDs: set[str]         = set()
 
 
   # Print calendar labels ("summaries") and corresponding indices.
@@ -59,20 +82,15 @@ class LinkedCalendar:
     except IndexError as error:
       print (f"ERROR: (probably) invalid calendar index given: {error}")
 
-  # Returns bool for True if events were updated, False if not buuutt...
-  #   I'd also want the actual events that were updated (changed/added/deleted),
-  #   so the return type could be...
-    # (1) tuple[list, list]
-      # where the first list is the list of changed/added events, and the second
-      #   is the list of deleted events
-    # (2) tuple[list, list, list]
-      # similar to (1), but a separate list for changed, added, and deleted
-      # might be necessary if change and add operations are very different
-      #   (which they might be, depending on the CalendarImage structure)
-  def updateEventsForGivenMonth(self, *, month: int) -> bool:
-    change_was_made_to_events = False
-
+  # Returns three lists: event_IDs of removed events, Events objects updated,
+  # and Events added.
+  # Also updates self.__events accordingly.
+  def getEventsForGivenMonth(self, *, month: int) -> tuple[list[Event], list[Event]]:
     api = self.__getServiceObject()
+
+    removed_event_IDs = set(self.__events.keys())
+    removed_events    = []
+    new_events        = []
 
     # Set up for getting a whole month of events for the current year:
     time_min, time_max = getFirstAndLastDtOfGivenMonth(month)
@@ -91,19 +109,15 @@ class LinkedCalendar:
           .execute().get("items", [])
       )
 
-      retrieved_event_IDs = set()
-
       # Add events which are not recurring to obj's 'self.__events_list'.
       for event in retrieved_events:
         event_id   = event["id"]
         event_etag = event["etag"]
-        retrieved_event_IDs.add(event_id)
+        removed_event_IDs.discard(event_id)
 
         # Skip events that haven't changed.
         if event_id in self.__events and event_etag == self.__events[event_id].last_etag:
           continue
-
-        change_was_made_to_events = True
 
         event_start_info = event["start"]
         start_dt_iso     = None
@@ -125,23 +139,23 @@ class LinkedCalendar:
           title=event.get("summary"),
           description=event.get("description"),
           start_dt_iso=start_dt_iso,
-          end_dt_iso=end_dt_str
+          end_dt_iso=end_dt_str,
+          is_recurring=("recurrence" in event or "recurringEventId" in event)
         )
 
+        if event_id in self.__events:
+          removed_events.append(self.__events[event_id])
+        new_events.append(event_obj)
         self.__events[event_id] = event_obj
-
-        if "recurrence" in event or "recurringEventId" in event:
-          self.__recurring_event_IDs.add(event_id)
     except HttpError as error:
       print(f"ERROR: Issue updating events list: {error}")
 
-    # Remove events that are no longer in Google Calendar.
-    old_events_count = len(self.__events)
-    for event_id in self.__events:
-      if not event_id in retrieved_event_IDs:
-        del self.__events[event_id]
+    # Add removed events to output list and remove event from self.__events.
+    for event_id in removed_event_IDs:
+      removed_events.append(self.__events[event_id])
+      del self.__events[event_id]
 
-    return len(self.__events) < old_events_count or change_was_made_to_events
+    return (removed_events, new_events)
 
 
   def getEventsList(self):
@@ -207,29 +221,6 @@ class LinkedCalendar:
       return build("calendar", "v3", credentials=creds)
     except MutualTLSChannelError as error:
       print(f"ERROR: issue setting up mutual TLS channel when building service object: {error}")
-
-
-
-class Event:
-
-  def __init__(
-    self,
-    *,
-    id: str,
-    last_etag: str,
-    url: str,
-    title: str,
-    description: str,
-    start_dt_iso: str,
-    end_dt_iso: str
-  ) -> None:
-    self.id          = id
-    self.last_etag   = last_etag
-    self.url         = url
-    self.title       = title
-    self.description = description
-    self.start_dt    = datetime.fromisoformat(start_dt_iso) if not start_dt_iso is None else None
-    self.end_dt      = datetime.fromisoformat(end_dt_iso)   if not end_dt_iso   is None else None
 
 
 
